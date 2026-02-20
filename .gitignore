@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+*.dxf.summary.json
+*_modified.dxf
+*_MODIFIED.dxf
+*_updated.dxf
+
+# Environment
+.env
+.env.local
+
+# Test outputs
+*.log
