@@ -25,15 +25,16 @@ pip install -r requirements.txt
 
 ## Quick Start
 
+Run the CLI demo:
+```bash
+python demo_phase3.py
+```
+
 Run the web UI:
 ```bash
 streamlit run app.py
 ```
 
-Run the CLI demo:
-```bash
-python demo_phase3.py
-```
 
 API keys — create `.streamlit/secrets.toml`:
 ```toml
