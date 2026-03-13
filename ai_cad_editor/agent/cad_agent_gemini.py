@@ -167,7 +167,7 @@ GEMINI_TOOLS = types.Tool(
             description=(
                 "Reconstruct and calculate the area of a room by tracing the smallest "
                 "closed polygon of LINE wall entities enclosing a seed point (x, y) "
-                "inside the room. Use this when there is no AREA-ASSIGN layer — i.e. "
+                "inside the room. Use this when there is no AREA-ASSIGN layer - i.e. "
                 "rooms are bounded by individual LINE segments rather than closed "
                 "LWPOLYLINEs. Workflow: (1) find the room label text entity, "
                 "(2) call get_entity_center to get its (x, y), "
@@ -248,20 +248,26 @@ Text Labels (sample):
 {chr(10).join(text_samples)}
 
 Guidelines:
-- DXF coordinates are very large numbers (not pixels) — always use max_distance_from_line of at least 500 when calling find_entities_between
-- Room labels are TEXT or MTEXT entities — find them by searching text content
+- DXF coordinates are very large numbers (not pixels) - always use max_distance_from_line of at least 500 when calling find_entities_between
+- Room labels are TEXT or MTEXT entities - find them by searching text content
 - To identify which layer contains walls, look at the layer list above: wall layers are typically named A-WALL, 단면선, ELE-1, or similar structural layer names
 - To find a wall between two rooms: (1) find the text handles for both room labels, (2) use find_entities_in_region on the rectangular bounding box between them on the wall layer, (3) delete each found entity
 - If layers have Korean names: 벽체=wall, 마감=finish, 단면=section/cross-section, 창호=window/door, 중심선=centerline, 입면=elevation, 치수=dimension, 문=door, 창=window
 - If AREA-ASSIGN layer exists: it has room boundary LWPOLYLINEs (use get_area on their handles)
-- To answer "which rooms have doors/windows/X": (1) call find_entities_by_layer on the door/window layer to get all those entities, (2) for each entity call get_entity_center to get its (x,y), (3) call find_entities_near_point at that (x,y) with a large radius (try 5000–20000) on the text/label layer to find the nearest room label, (4) compile and report the full list — do NOT stop after one example, process ALL entities
+- To answer "which rooms have doors/windows/X": (1) call find_entities_by_layer on the door/window layer to get all those entities, (2) for each entity call get_entity_center to get its (x,y), (3) call find_entities_near_point at that (x,y) with a large radius (try 5000–20000) on the text/label layer to find the nearest room label, (4) compile and report the full list - do NOT stop after one example, process ALL entities
 - To answer "which room is biggest/smallest" when there is no AREA-ASSIGN layer: (1) find all room label text entities, (2) for each call get_entity_center, (3) call reconstruct_room_area with that center and the wall layer name, (4) sort and report all areas
 - Always provide handles when identifying entities
+- To add a room next to an existing room: (1) get_entity_center of the room label to find its center, (2) find_entities_near_point with a large radius (try 2x the expected room size) to find all wall LINE/LWPOLYLINE handles around that room, (3) get_entity_bounds to find the room's width/height, (4) call copy_entities with those handles and offset = (room_width, 0) or similar to place the new room adjacent
 - Think step-by-step for complex operations
-- NEVER truncate or summarize lists — always show ALL results in full"""
+- NEVER truncate or summarize lists - always show ALL results in full"""
 
     def _execute_tool(self, tool_name: str, tool_input: Dict[str, Any]) -> Any:
-        tool_input = {**tool_input, "dxf_path": str(self.dxf_path)}
+        write_ops = {"color_layer", "delete_entity", "edit_text", "copy_entities"}
+        if tool_name in write_ops and self.last_output_path:
+            active_path = self.last_output_path
+        else:
+            active_path = str(self.dxf_path)
+        tool_input = {**tool_input, "dxf_path": active_path}
 
         try:
             if tool_name == "list_layers":
@@ -282,6 +288,10 @@ Guidelines:
                 return result
             elif tool_name == "edit_text":
                 result = core.edit_text(**tool_input)
+                self.last_output_path = tool_input.get("output_path")
+                return result
+            elif tool_name == "copy_entities":
+                result = core.copy_entities(**tool_input)
                 self.last_output_path = tool_input.get("output_path")
                 return result
             elif tool_name == "get_entity_center":
@@ -317,7 +327,7 @@ Guidelines:
             ]
 
             if not function_calls:
-                # No function calls — return the text response
+                # No function calls - return the text response
                 return response.text
 
             # Execute each function call and send all results back at once
